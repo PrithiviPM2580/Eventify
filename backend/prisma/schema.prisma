@@ -1,3 +1,4 @@
+
 generator client {
   provider = "prisma-client"
   output   = "../src/generated/prisma"
@@ -7,65 +8,67 @@ datasource db {
   provider = "postgresql"
 }
 
-enum Role{
+enum Role {
   USER
   ORGANIZER
   ADMIN
 }
 
-enum EventStatus{
+enum EventStatus {
   UPCOMING
   ONGOING
   COMPLETED
   CANCELLED
 }
 
-enum RegistrationStatus{
+enum RegistrationStatus {
   PENDING
   APPROVED
   REJECTED
   CANCELLED
 }
 
-enum RequestStatus{
+enum RequestStatus {
   PENDING
   APPROVED
   REJECTED
 }
 
+model User {
+	id                String            @id @default(cuid())
+	email             String            @unique
+	password          String?
+	name              String            // Keep this (Better Auth requirement)
+	emailVerified     Boolean           @default(false)
+	image             String?           // Keep this (Better Auth requirement)
+	role              Role              @default(USER)
+	createdAt         DateTime          @default(now())
+	updatedAt         DateTime          @updatedAt
+	events            Event[]           @relation("OrganizerEvents")
+	registrations     Registration[]
+	organizerRequests OrganizerRequest?
+	sessions          Session[]         // Better Auth requirement
+	accounts          Account[]         // Better Auth requirement
 
-model User{
-  id String @id @default(cuid())
-  email String @unique
-  password String?
-  fullName String?
-  avatarUrl String?
-  role Role @default(USER)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  events Event[]  @relation("OrganizerEvents")
-  registrations Registration[]
-  organizerRequests OrganizerRequest?
-
-  @@map("users")
+	@@map("users")
 }
 
 model Event {
-  id           String      @id @default(cuid())
-  title        String
-  description  String
-  date         DateTime
-  startTime    String
-  endTime      String
-  location     String
-  category     String
-  imageUrl     String?
-  capacity     Int
-  status EventStatus @default(UPCOMING)
-  createdAt    DateTime    @default(now())
+  id          String      @id @default(cuid())
+  title       String
+  description String
+  date        DateTime
+  startTime   String
+  endTime     String
+  location    String
+  category    String
+  imageUrl    String?
+  capacity    Int
+  status      EventStatus @default(UPCOMING)
+  createdAt   DateTime    @default(now())
 
-  organizerId  String
-  organizer    User        @relation("OrganizerEvents", fields: [organizerId], references: [id])
+  organizerId String
+  organizer   User   @relation("OrganizerEvents", fields: [organizerId], references: [id])
 
   registrations Registration[]
 
@@ -73,15 +76,15 @@ model Event {
 }
 
 model Registration {
-  id        String              @id @default(cuid())
-  status    RegistrationStatus  @default(PENDING)
-  createdAt DateTime            @default(now())
+  id        String             @id @default(cuid())
+  status    RegistrationStatus @default(PENDING)
+  createdAt DateTime           @default(now())
 
-  userId    String
-  eventId   String
+  userId  String
+  eventId String
 
-  user      User   @relation(fields: [userId], references: [id])
-  event     Event  @relation(fields: [eventId], references: [id])
+  user  User  @relation(fields: [userId], references: [id])
+  event Event @relation(fields: [eventId], references: [id])
 
   @@unique([userId, eventId])
   @@map("registrations")
@@ -93,8 +96,56 @@ model OrganizerRequest {
   message   String?
   createdAt DateTime      @default(now())
 
-  userId    String @unique
-  user      User   @relation(fields: [userId], references: [id])
+  userId String @unique
+  user   User   @relation(fields: [userId], references: [id])
 
   @@map("organizer_requests")
+}
+
+model Session {
+  id        String   @id
+  expiresAt DateTime
+  token     String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  ipAddress String?
+  userAgent String?
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([token])
+  @@index([userId])
+  @@map("session")
+}
+
+model Account {
+  id                    String    @id
+  accountId             String
+  providerId            String
+  userId                String
+  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  accessToken           String?
+  refreshToken          String?
+  idToken               String?
+  accessTokenExpiresAt  DateTime?
+  refreshTokenExpiresAt DateTime?
+  scope                 String?
+  password              String?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+
+  @@index([userId])
+  @@map("account")
+}
+
+model Verification {
+  id         String   @id
+  identifier String
+  value      String
+  expiresAt  DateTime
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([identifier])
+  @@map("verification")
 }
