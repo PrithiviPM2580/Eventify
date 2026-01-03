@@ -6,3 +6,95 @@ generator client {
 datasource db {
   provider = "postgresql"
 }
+
+enum Role{
+  USER
+  ORGANIZER
+  ADMIN
+}
+
+enum EventStatus{
+  UPCOMING
+  ONGOING
+  COMPLETED
+  CANCELLED
+}
+
+enum RegistrationStatus{
+  PENDING
+  APPROVED
+  REJECTED
+  CANCELLED
+}
+
+enum RequestStatus{
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+
+model User{
+  id String @id @default(cuid())
+  email String @unique
+  password String?
+  fullName String?
+  avatarUrl String?
+  role Role @default(USER)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  events Event[]  @relation("OrganizerEvents")
+  registrations Registration[]
+  organizerRequests OrganizerRequest?
+
+  @@map("users")
+}
+
+model Event {
+  id           String      @id @default(cuid())
+  title        String
+  description  String
+  date         DateTime
+  startTime    String
+  endTime      String
+  location     String
+  category     String
+  imageUrl     String?
+  capacity     Int
+  status EventStatus @default(UPCOMING)
+  createdAt    DateTime    @default(now())
+
+  organizerId  String
+  organizer    User        @relation("OrganizerEvents", fields: [organizerId], references: [id])
+
+  registrations Registration[]
+
+  @@map("events")
+}
+
+model Registration {
+  id        String              @id @default(cuid())
+  status    RegistrationStatus  @default(PENDING)
+  createdAt DateTime            @default(now())
+
+  userId    String
+  eventId   String
+
+  user      User   @relation(fields: [userId], references: [id])
+  event     Event  @relation(fields: [eventId], references: [id])
+
+  @@unique([userId, eventId])
+  @@map("registrations")
+}
+
+model OrganizerRequest {
+  id        String        @id @default(cuid())
+  status    RequestStatus @default(PENDING)
+  message   String?
+  createdAt DateTime      @default(now())
+
+  userId    String @unique
+  user      User   @relation(fields: [userId], references: [id])
+
+  @@map("organizer_requests")
+}
