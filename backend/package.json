@@ -1,10 +1,11 @@
 {
   "name": "backend",
   "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
+  "description": "Eventify is a modern platform that helps users discover and register for local events while enabling organizers to create and manage events seamlessly in one place.",
+  "type": "module",
+  "main": "dist/index.js",
   "scripts": {
-    "dev": "tsx-r tsconfig-paths/register src/index.ts",
+    "dev": "tsx -r tsconfig-paths/register src/index.ts",
     "start": " node dist/index.js",
     "build": "tsc && tsc-alias",
     "type-check": "tsc --noEmit",
